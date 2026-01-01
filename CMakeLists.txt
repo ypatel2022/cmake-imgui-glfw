@@ -1,0 +1,103 @@
+# cmake_minimum_required(VERSION 3.28)
+
+# set(PROJECT_NAME glfwTestProject)
+
+# project(${PROJECT_NAME} LANGUAGES CXX)
+
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+
+# # Set startup project for Visual Studio
+# set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+
+
+# # Source files
+# file(GLOB_RECURSE CPP_SOURCES "src/*.cpp")
+# file(GLOB_RECURSE CPP_HEADERS "include/*.h")
+
+# # Add GLFW
+# add_subdirectory(libs/glfw)
+# # set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "")
+
+
+# # Create executable
+# add_executable(${PROJECT_NAME}
+#   ${CPP_SOURCES}
+#   ${CPP_HEADERS})
+
+# # Include directories
+# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# # Compiler features and libraries
+# target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+# target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+
+
+cmake_minimum_required(VERSION 3.28)
+project(glfwTestProject LANGUAGES CXX C)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
+# GLFW Configuration
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)
+add_subdirectory(libs/glfw)
+
+# GLAD Configuration
+add_library(glad STATIC
+    libs/glad/src/gl.c
+    libs/glad/include/glad/gl.h
+)
+target_include_directories(glad PUBLIC libs/glad/include)
+
+
+# Define executable
+add_executable(${PROJECT_NAME}
+    src/main.cpp
+    include/linmath.h
+    include/utils.h
+    # Add other .cpp and .h files here
+)
+
+# Project configuration
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Links everything together
+find_package(OpenGL REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    glad
+    glfw
+    OpenGL::GL
+)
+
+# Linux Requirement: Need 'dl' for dynamic loading of GL functions
+if(UNIX AND NOT APPLE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_DL_LIBS})
+endif()
+
+# Runtime output directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+# VS Startup Project (Windows)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+
+# Shaders
+set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/shaders)
+set(SHADER_OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/shaders)
+
+file(GLOB SHADER_FILES
+    ${SHADER_SOURCE_DIR}/*.vert
+    ${SHADER_SOURCE_DIR}/*.frag
+)
+
+add_custom_target(copy_shaders ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${SHADER_FILES}
+            ${SHADER_OUTPUT_DIR}
+)
+
+add_dependencies(${PROJECT_NAME} copy_shaders)
