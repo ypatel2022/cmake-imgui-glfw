@@ -1,42 +1,6 @@
-# cmake_minimum_required(VERSION 3.28)
-
-# set(PROJECT_NAME glfwTestProject)
-
-# project(${PROJECT_NAME} LANGUAGES CXX)
-
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-
-# # Set startup project for Visual Studio
-# set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
-
-
-# # Source files
-# file(GLOB_RECURSE CPP_SOURCES "src/*.cpp")
-# file(GLOB_RECURSE CPP_HEADERS "include/*.h")
-
-# # Add GLFW
-# add_subdirectory(libs/glfw)
-# # set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "")
-
-
-# # Create executable
-# add_executable(${PROJECT_NAME}
-#   ${CPP_SOURCES}
-#   ${CPP_HEADERS})
-
-# # Include directories
-# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# # Compiler features and libraries
-# target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-# target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
-
-
 cmake_minimum_required(VERSION 3.28)
 project(glfwTestProject LANGUAGES CXX C)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 
 # GLFW Configuration
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -52,12 +16,11 @@ add_library(glad STATIC
 )
 target_include_directories(glad PUBLIC libs/glad/include)
 
-
 # Define executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
-    include/linmath.h
     include/utils.h
+    include/gl_debug.h
     # Add other .cpp and .h files here
 )
 

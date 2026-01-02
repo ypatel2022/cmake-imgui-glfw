@@ -1,9 +1,19 @@
-#version 330
+#version 410 core
 
-in vec3 color;
-out vec4 fragment;
+out vec4 fragColor;
+
+uniform vec2 iResolution;
+uniform float iTime;
 
 void main()
 {
-    fragment = vec4(color, 1.0);
+    vec2 uv = gl_FragCoord.xy / iResolution;
+    vec2 p = gl_FragCoord.xy - 0.5 * iResolution;
+    bool in_range = length(p) < (int(iTime * 500) % 1000);
+
+    if (in_range) {
+        fragColor = vec4(uv, 1.0, 1.0);
+    } else {
+        fragColor = vec4(0.0);
+    }
 }
