@@ -9,6 +9,19 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
+struct AppResources {
+    GLFWwindow* window;
+    GLuint program;
+    GLuint vao;
+    GLint res_loc;
+    GLint time_loc;
+};
 
 static void error_callback(int error, const char *description) {
   fprintf(stderr, "Error: %s\n", description);
@@ -20,8 +33,33 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action,
     glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-int main(void) {
+void update_performance_metrics(double &last_time, float &frame_time, float &fps) {
+  double current_time = glfwGetTime();
+  frame_time = (float)(current_time - last_time);
+  fps = 1.0f / frame_time;
+  last_time = current_time;
+}
 
+void draw_performance_window(float fps, float frame_time) {
+  ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(200, 80), ImGuiCond_FirstUseEver);
+  ImGui::Begin("Performance", nullptr,
+               ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
+               ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs |
+               ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoTitleBar);
+
+  // Right-aligned numbers with fixed width
+  char fps_str[16];
+  char frame_time_str[16];
+  snprintf(fps_str, sizeof(fps_str), "%6.1f", fps);
+  snprintf(frame_time_str, sizeof(frame_time_str), "%6.1f", frame_time * 1000.0f);
+
+  ImGui::Text("FPS: %s", fps_str);
+  ImGui::Text("Frame Time: %s ms", frame_time_str);
+  ImGui::End();
+}
+
+AppResources initialize_application() {
   // GLFW Setup
   glfwSetErrorCallback(error_callback);
 
@@ -45,8 +83,22 @@ int main(void) {
   gladLoadGL(glfwGetProcAddress);
   glfwSwapInterval(1);
 
-  // OpenGL setup
+  // ImGui setup
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGui::StyleColorsDark();
 
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+  io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableGamepad;            // Enable Gamepad Controls
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // IF using Docking Branch
+
+  ImGui_ImplGlfw_InitForOpenGL(window, true);
+  ImGui_ImplOpenGL3_Init("#version 410");
+
+  // OpenGL setup
   const float fullscreen_triangle[] = {-1.0f, -1.0f, 3.0f, -1.0f, -1.0f, 3.0f};
 
   GLuint vao, vbo;
@@ -90,26 +142,54 @@ int main(void) {
   const GLint res_loc = glGetUniformLocation(program, "iResolution");
   const GLint time_loc = glGetUniformLocation(program, "iTime");
 
+  return {window, program, vao, res_loc, time_loc};
+}
+
+int main(void) {
+  // Initialize all application resources
+  AppResources resources = initialize_application();
+
+  // Frame time and FPS tracking
+  double last_time = 0.0;
+  float frame_time = 0.0f;
+  float fps = 0.0f;
+
   // Render loop
   int width, height;
   float ratio;
-  while (!glfwWindowShouldClose(window)) {
-    glfwGetFramebufferSize(window, &width, &height);
+  while (!glfwWindowShouldClose(resources.window)) {
+    // Update performance metrics
+    update_performance_metrics(last_time, frame_time, fps);
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Draw performance window
+    draw_performance_window(fps, frame_time);
+
+    glfwGetFramebufferSize(resources.window, &width, &height);
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(program);
-    glUniform2f(res_loc, (float)width, (float)height);
-    glUniform1f(time_loc, (float)glfwGetTime());
+    glUseProgram(resources.program);
+    glUniform2f(resources.res_loc, (float)width, (float)height);
+    glUniform1f(resources.time_loc, (float)glfwGetTime());
 
-    glBindVertexArray(vao);
+    glBindVertexArray(resources.vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    glfwSwapBuffers(window);
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    glfwSwapBuffers(resources.window);
     glfwPollEvents();
   }
 
-  glfwDestroyWindow(window);
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+  glfwDestroyWindow(resources.window);
   glfwTerminate();
   exit(EXIT_SUCCESS);
 }

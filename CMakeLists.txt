@@ -16,12 +16,33 @@ add_library(glad STATIC
 )
 target_include_directories(glad PUBLIC libs/glad/include)
 
+# ImGui
+set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
+
+add_library(imgui STATIC
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(imgui PUBLIC
+    ${IMGUI_DIR}
+    ${IMGUI_DIR}/backends
+)
+
+target_link_libraries(imgui PUBLIC
+    glfw
+    OpenGL::GL
+)
+
 # Define executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
     include/utils.h
     include/gl_debug.h
-    # Add other .cpp and .h files here
 )
 
 # Project configuration
@@ -32,8 +53,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/i
 find_package(OpenGL REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE
     glad
-    glfw
-    OpenGL::GL
+    imgui
 )
 
 # Linux Requirement: Need 'dl' for dynamic loading of GL functions
