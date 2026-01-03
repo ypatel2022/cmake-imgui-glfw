@@ -41,8 +41,12 @@ target_link_libraries(imgui PUBLIC
 # Define executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
+    src/shader.cpp
+    src/application.cpp
+    include/application.h
     include/utils.h
     include/gl_debug.h
+    include/shader.h
 )
 
 # Project configuration
