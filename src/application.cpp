@@ -45,7 +45,7 @@ void Application::run() {
 
     shader->use();
     shader->set_float("iTime", (float)glfwGetTime());
-    shader->set_2float("iResolution", (float)width, (float)height);
+    shader->set_vec2("iResolution", (float)width, (float)height);
 
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
